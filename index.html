@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spending Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Spending Tracker</h2>
+        <ul>
+            <li><a href="#" data-target="overview">Overview</a></li>
+            <li><a href="#" data-target="add">Add Earnings & Expenses</a></li>
+            <li><a href="#" data-target="summary">Statistics Summary</a></li>
+            <li><a href="#" data-target="dateSummary">Date Summary</a></li>
+        </ul>
+    </div>
+    <div class="main-content">
+        <header>
+            <h1>Spending Tracker</h1>
+        </header>
+        <section id="overview" class="tab-content active">
+            <h2>Overview</h2>
+            <p id="overviewText">You've spent ₱0.00 and you've earned ₱0.00 on this day.</p>
+            <p id="recommendations">Recommendations will be shown here based on your spending and earnings.</p>
+        </section>
+        <section id="summary" class="tab-content hidden">
+            <h2>Monthly Summary</h2>
+            <div class="summary-details">
+                <div id="earnings">Earnings: ₱0.00</div>
+                <div id="expenses">Expenses: ₱0.00</div>
+            </div>
+            <canvas id="statsChart"></canvas>
+        </section>
+        <section id="add" class="tab-content hidden">
+            <h2>Add Earnings & Expenses</h2>
+            <form id="modalForm">
+                <label for="type">Type:</label>
+                <select id="type" name="type">
+                    <option value="">Select type</option>
+                    <option value="earning">Earning</option>
+                    <option value="expense">Expense</option>
+                </select>
+                <label for="category">Category:</label>
+                <select id="category" name="category">
+                    <option value="">Select category</option>
+                </select>
+                <label for="amount">Amount:</label>
+                <input type="number" id="amount" name="amount" required>
+                <label for="date">Date:</label>
+                <input type="date" id="date" name="date" required>
+                <label for="note">Note:</label>
+                <textarea id="note" name="note"></textarea>
+                <button type="submit">Save</button>
+            </form>
+        </section>
+        <section id="dateSummary" class="tab-content hidden">
+            <h2>Date Summary</h2>
+            <form id="dateForm">
+                <label for="summaryDate">Select Date:</label>
+                <input type="date" id="summaryDate" name="summaryDate" required>
+                <button type="submit">View Summary</button>
+            </form>
+            <div id="dateSummaryDetails" class="hidden">
+                <h3>Summary for <span id="selectedDate"></span></h3>
+                <div id="dateEarnings">Earnings: ₱0.00</div>
+                <div id="dateExpenses">Expenses: ₱0.00</div>
+                <div id="dateNotes">Notes: None</div>
+            </div>
+        </section>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
