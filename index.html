@@ -6,26 +6,64 @@
     <title>Spending Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <script src="auth.js" defer></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
     <div class="sidebar">
         <h2>Spending Tracker</h2>
         <ul>
-            <li><a href="#" data-target="overview">Overview</a></li>
-            <li><a href="#" data-target="add">Add Earnings & Expenses</a></li>
-            <li><a href="#" data-target="summary">Statistics Summary</a></li>
-            <li><a href="#" data-target="dateSummary">Date Summary</a></li>
+            <li><a href="#" data-target="overview"><i class="material-icons">insert_chart_outlined</i> Overview</a></li>
+            <li><a href="#" data-target="add"><i class="material-icons">add_circle</i> Add Earnings & Expenses</a></li>
+            <li><a href="#" data-target="summary"><i class="material-icons">pie_chart</i> Statistics Summary</a></li>
+            <li><a href="#" data-target="dateSummary"><i class="material-icons">calendar_today</i> Date Summary</a></li>
+            <li><a href="#" data-target="budget"><i class="material-icons">attach_money</i> Set Budget</a></li>
+            <li><a href="#" data-target="goals"><i class="material-icons">track_changes</i> Set Goals</a></li>
+            <li><a href="#" data-target="reports"><i class="material-icons">description</i> Generate Reports</a></li>
         </ul>
+        <button id="logoutButton">Logout</button>
     </div>
     <div class="main-content">
-        <header>
-            <h1>Spending Tracker</h1>
-        </header>
         <section id="overview" class="tab-content active">
             <h2>Overview</h2>
-            <p id="overviewText">You've spent ₱0.00 and you've earned ₱0.00 on this day.</p>
-            <p id="recommendations">Recommendations will be shown here based on your spending and earnings.</p>
+            <div class="overview-content">
+                <div class="overview-item">
+                    <h3>Current Month's Progress</h3>
+                    <p id="monthlyEarnings">Earnings: ₱0.00</p>
+                    <p id="monthlyExpenses">Expenses: ₱0.00</p>
+                    <p id="monthlyBudgetComparison">You have ₱0.00 left from your budget.</p>
+                </div>
+                <div class="overview-item">
+                    <h3>Today's Summary</h3>
+                    <p id="dailyEarnings">Earnings: ₱0.00</p>
+                    <p id="dailyExpenses">Expenses: ₱0.00</p>
+                </div>
+                <div class="overview-item">
+                    <h3>Savings Goals</h3>
+                    <p id="goalProgress">You have saved ₱0.00 towards your goal: "Goal Name"</p>
+                </div>
+                <div class="overview-item">
+                    <h3>Upcoming Bills/Payments</h3>
+                    <ul id="upcomingBills">
+                        <li>No upcoming bills</li>
+                    </ul>
+                </div>
+                <div class="overview-item">
+                    <h3>Top Spending Categories</h3>
+                    <ul id="topCategories">
+                        <li>No spending data available</li>
+                    </ul>
+                </div>
+                <div class="overview-item">
+                    <h3>Recommendations</h3>
+                    <p id="recommendations">Recommendations will be shown here based on your spending and earnings.</p>
+                </div>
+            </div>
         </section>
         <section id="summary" class="tab-content hidden">
             <h2>Monthly Summary</h2>
@@ -71,7 +109,77 @@
                 <div id="dateNotes">Notes: None</div>
             </div>
         </section>
+        <section id="budget" class="tab-content hidden">
+            <h2>Set Budget</h2>
+            <form id="budgetForm">
+                <label for="monthlyBudget">Monthly Budget:</label>
+                <input type="number" id="monthlyBudget" name="monthlyBudget" required>
+                <button type="submit">Set Budget</button>
+            </form>
+            <div id="budgetDetails">
+                <p>Current Monthly Budget: ₱<span id="currentBudget">0.00</span></p>
+                <p>Remaining Budget: ₱<span id="remainingBudget">0.00</span></p>
+            </div>
+        </section>
+        <section id="goals" class="tab-content hidden">
+            <h2>Set Goals</h2>
+            <form id="goalForm">
+                <label for="goalName">Goal Name:</label>
+                <input type="text" id="goalName" name="goalName" required>
+                <label for="goalAmount">Goal Amount:</label>
+                <input type="number" id="goalAmount" name="goalAmount" required>
+                <button type="submit">Set Goal</button>
+            </form>
+            <div id="goalDetails">
+                <p>Current Goal: <span id="currentGoal">None</span></p>
+                <p>Goal Amount: ₱<span id="goalAmountDisplay">0.00</span></p>
+                <p>Amount Saved: ₱<span id="amountSaved">0.00</span></p>
+            </div>
+        </section>
+        <section id="reports" class="tab-content hidden">
+            <h2>Generate Reports</h2>
+            <form id="reportForm">
+                <label for="reportType">Report Type:</label>
+                <select id="reportType" name="reportType">
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                </select>
+                <label for="reportDate">Select Month/Year:</label>
+                <input type="month" id="reportDate" name="reportDate" required>
+                <button type="submit">Generate Report</button>
+            </form>
+            <div id="reportOutput" class="hidden">
+                <h3>Report for <span id="reportPeriod"></span></h3>
+                <div id="earningsReport">
+                    <h4>Earnings:</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="earningsTableBody"></tbody>
+                    </table>
+                </div>
+                <div id="expensesReport">
+                    <h4>Expenses:</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expensesTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
     </div>
-    <script src="script.js"></script>
 </body>
 </html>
