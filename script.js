@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const auth = window.auth;
     const db = window.db;
+    const storage = firebase.storage();
 
     const sidebarLinks = document.querySelectorAll('.sidebar ul li a');
     const tabs = document.querySelectorAll('.tab-content');
@@ -32,6 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const earningsTableBody = document.getElementById('earningsTableBody');
     const expensesTableBody = document.getElementById('expensesTableBody');
+    const profileImage = document.getElementById('profileImage');
+    const profileInitial = document.getElementById('profileInitial');
+    const profileButton = document.getElementById('profileButton');
 
     let user = null;
     let earnings = 0;
@@ -126,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
             user = currentUser;
             await loadUserData();
             setActiveTab('overview');
+            updateProfileImage();
         } else {
             user = null;
             if (!window.location.pathname.endsWith('login.html')) {
@@ -420,5 +425,100 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('reportOutput').classList.remove('hidden');
     }
 
-    updateOverview();
+    // Profile Modal Handling
+    const profileModal = document.getElementById('profileModal');
+    const closeProfileModal = document.getElementById('closeProfileModal');
+    const profilePictureForm = document.getElementById('profilePictureForm');
+    const removeProfilePicture = document.getElementById('removeProfilePicture');
+
+    profileButton.addEventListener('click', () => {
+        profileModal.classList.remove('hidden');
+    });
+
+    closeProfileModal.addEventListener('click', () => {
+        profileModal.classList.add('hidden');
+    });
+
+    profilePictureForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const file = document.getElementById('profilePicture').files[0];
+        if (file && auth.currentUser) {
+            const storageRef = storage.ref();
+            const profilePicRef = storageRef.child(`profile_pictures/${auth.currentUser.uid}`);
+            await profilePicRef.put(file);
+            const profilePicURL = await profilePicRef.getDownloadURL();
+            await auth.currentUser.updateProfile({ photoURL: profilePicURL });
+            updateProfileImage();
+            profileModal.classList.add('hidden');
+        }
+    });
+
+    removeProfilePicture.addEventListener('click', async () => {
+        if (auth.currentUser) {
+            await auth.currentUser.updateProfile({ photoURL: null });
+            updateProfileImage();
+            profileModal.classList.add('hidden');
+        }
+    });
+
+    async function updateProfileImage() {
+        if (auth.currentUser.photoURL) {
+            profileImage.src = auth.currentUser.photoURL;
+            profileImage.style.display = 'block';
+            profileInitial.style.display = 'none';
+        } else {
+            const initial = auth.currentUser.email.charAt(0).toUpperCase();
+            profileInitial.textContent = initial;
+            profileInitial.style.display = 'flex';
+            profileInitial.style.backgroundColor = '#000';
+            profileImage.style.display = 'none';
+        }
+    }
+
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            updateProfileImage();
+        } else {
+            window.location.href = 'login.html';
+        }
+    });
+
+    // Settings Modal Handling
+    const settingsButton = document.getElementById('settingsButton');
+    const settingsModal = document.getElementById('settingsModal');
+    const closeSettingsModal = document.getElementById('closeSettingsModal');
+    const changeProfilePicture = document.getElementById('changeProfilePicture');
+    const resetAccountHistory = document.getElementById('resetAccountHistory');
+
+    settingsButton.addEventListener('click', () => {
+        settingsModal.classList.remove('hidden');
+    });
+
+    closeSettingsModal.addEventListener('click', () => {
+        settingsModal.classList.add('hidden');
+    });
+
+    changeProfilePicture.addEventListener('click', () => {
+        settingsModal.classList.add('hidden');
+        profileModal.classList.remove('hidden');
+    });
+
+    resetAccountHistory.addEventListener('click', async () => {
+        if (confirm('Are you sure you want to reset all account history? This action cannot be undone.')) {
+            // Reset account history logic here
+            await db.collection('transactions').where('userId', '==', user.uid).get().then(snapshot => {
+                snapshot.forEach(doc => {
+                    doc.ref.delete();
+                });
+            });
+
+            transactions.length = 0;
+            earnings = 0;
+            expenses = 0;
+            monthlyBudget = 0;
+            goal = { name: '', amount: 0, saved: 0 };
+            updateOverview();
+            settingsModal.classList.add('hidden');
+        }
+    });
 });
